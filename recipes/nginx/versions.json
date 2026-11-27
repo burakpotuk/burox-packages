@@ -1,0 +1,15 @@
+{
+  "name": "nginx",
+  "kind": "source",
+  "deps": [
+    "openssl",
+    "pcre2",
+    "zlib"
+  ],
+  "builds": [
+    {
+      "version": "1.30.8",
+      "channel": "stable"
+    }
+  ]
+}

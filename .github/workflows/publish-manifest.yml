@@ -1,0 +1,85 @@
+# Build manifest.json from every published package release, sign it with
+# Ed25519 (secret MANIFEST_SIGNING_KEY) and publish manifest.json +
+# manifest.json.sig on the fixed "manifest" release:
+#   https://github.com/<owner>/<repo>/releases/download/manifest/manifest.json
+# Runs after every package build and can be started by hand.
+name: publish-manifest
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: sign and publish manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: publish-manifest
+      cancel-in-progress: false
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Generate manifest.json from releases
+        run: |
+          mkdir -p out
+          python3 scripts/make-manifest.py --repo "$GH_REPO" --out out/manifest.json
+
+      - name: Sign (Ed25519)
+        env:
+          MANIFEST_SIGNING_KEY: ${{ secrets.MANIFEST_SIGNING_KEY }}
+        run: scripts/sign-manifest.sh out/manifest.json
+
+      - name: Verify signature and reject a tampered copy
+        run: |
+          scripts/verify-manifest.sh out/manifest.json
+          mkdir -p "$RUNNER_TEMP/tamper"
+          cp out/manifest.json out/manifest.json.sig "$RUNNER_TEMP/tamper/"
+          python3 -c 'import sys; p=sys.argv[1]; b=bytearray(open(p,"rb").read()); b[len(b)//2]^=1; open(p,"wb").write(bytes(b))' \
+            "$RUNNER_TEMP/tamper/manifest.json"
+          if scripts/verify-manifest.sh "$RUNNER_TEMP/tamper/manifest.json"; then
+            echo "::error::a manifest with one modified byte passed verification"
+            exit 1
+          fi
+          echo "tampered manifest correctly rejected"
+
+      - name: Publish to the "manifest" release
+        run: |
+          if ! gh release view manifest >/dev/null 2>&1; then
+            gh release create manifest --title "Burox package manifest" --latest \
+              --notes "Signed package index for the Burox app: manifest.json + manifest.json.sig (Ed25519, base64). Updated automatically by the publish-manifest workflow."
+          fi
+          gh release upload manifest out/manifest.json out/manifest.json.sig --clobber
+
+      - name: Verify what clients download
+        run: |
+          mkdir -p "$RUNNER_TEMP/dl"
+          base="https://github.com/$GH_REPO/releases/download/manifest"
+          for _ in 1 2 3 4 5; do
+            curl -fsSL -o "$RUNNER_TEMP/dl/manifest.json" "$base/manifest.json"
+            curl -fsSL -o "$RUNNER_TEMP/dl/manifest.json.sig" "$base/manifest.json.sig"
+            if cmp -s "$RUNNER_TEMP/dl/manifest.json" out/manifest.json; then break; fi
+            sleep 5
+          done
+          cmp out/manifest.json "$RUNNER_TEMP/dl/manifest.json"
+          scripts/verify-manifest.sh "$RUNNER_TEMP/dl/manifest.json"
+
+      - name: Summary
+        run: |
+          {
+            echo "### Signed manifest"
+            echo
+            echo "https://github.com/$GH_REPO/releases/download/manifest/manifest.json"
+            echo
+            echo "| Package | Channel | Version | Min macOS | Size |"
+            echo "|---|---|---|---|---|"
+            jq -r '.packages[] | "| \(.name) | \(.channel) | \(.version) | \(.minMacOS) | \(.size) |"' out/manifest.json
+          } >>"$GITHUB_STEP_SUMMARY"

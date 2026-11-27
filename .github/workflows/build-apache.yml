@@ -1,0 +1,52 @@
+# Build and publish apache. Versions come from recipes/apache/versions.json.
+#  - Run by hand: Actions > build-apache > Run workflow
+#  - Automatic: when recipes/apache/versions.json changes on main
+#  - Pull requests: build + smoke test only, nothing is published
+name: build-apache
+
+on:
+  workflow_dispatch:
+    inputs:
+      versions:
+        description: "Sürümler (boş = versions.json'daki hepsi; örn. 2.4.71)"
+        type: string
+        default: ""
+      force:
+        description: "Zaten yayınlanmış sürümü silip yeniden derle"
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - recipes/apache/versions.json
+  pull_request:
+    paths:
+      - recipes/apache/**
+      - deps/openssl/**
+      - deps/pcre2/**
+      - deps/zlib/**
+      - deps/expat/**
+      - deps/apr/**
+      - deps/apr-util/**
+      - scripts/**
+      - .github/workflows/build-apache.yml
+      - .github/workflows/build-package.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-apache-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    uses: ./.github/workflows/build-package.yml
+    with:
+      package: apache
+      versions: ${{ inputs.versions || '' }}
+      force: ${{ inputs.force == true }}
+      publish: ${{ github.event_name != 'pull_request' }}
+    secrets: inherit

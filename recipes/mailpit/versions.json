@@ -1,0 +1,11 @@
+{
+  "name": "mailpit",
+  "kind": "binary",
+  "deps": [],
+  "builds": [
+    {
+      "version": "1.34.0",
+      "channel": "stable"
+    }
+  ]
+}

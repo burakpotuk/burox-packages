@@ -1,0 +1,8 @@
+{
+  "name": "cloudflared",
+  "url": "https://github.com/cloudflare/cloudflared/releases/download/{version}/cloudflared-darwin-arm64.tgz",
+  "strip": 0,
+  "versions": {
+    "2026.11.2": "f6d58eeec91ad1ec5fd1f7e4a587303772929b2625be5d24068033851c36ff55"
+  }
+}

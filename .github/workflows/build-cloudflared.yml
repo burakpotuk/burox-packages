@@ -1,0 +1,46 @@
+# Build and publish cloudflared. Versions come from recipes/cloudflared/versions.json.
+#  - Run by hand: Actions > build-cloudflared > Run workflow
+#  - Automatic: when recipes/cloudflared/versions.json changes on main
+#  - Pull requests: build + smoke test only, nothing is published
+name: build-cloudflared
+
+on:
+  workflow_dispatch:
+    inputs:
+      versions:
+        description: "Sürümler (boş = versions.json'daki hepsi; örn. 2026.11.2)"
+        type: string
+        default: ""
+      force:
+        description: "Zaten yayınlanmış sürümü silip yeniden derle"
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - recipes/cloudflared/versions.json
+  pull_request:
+    paths:
+      - recipes/cloudflared/**
+      - scripts/**
+      - .github/workflows/build-cloudflared.yml
+      - .github/workflows/build-package.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-cloudflared-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    uses: ./.github/workflows/build-package.yml
+    with:
+      package: cloudflared
+      versions: ${{ inputs.versions || '' }}
+      force: ${{ inputs.force == true }}
+      publish: ${{ github.event_name != 'pull_request' }}
+    secrets: inherit

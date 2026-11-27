@@ -1,0 +1,14 @@
+{
+  "name": "expat",
+  "version": "2.11.0",
+  "url": "https://github.com/libexpat/libexpat/releases/download/R_{version_underscored}/expat-{version}.tar.xz",
+  "signature": "{url}.asc",
+  "keyring": "expat",
+  "license": [
+    "COPYING"
+  ],
+  "requires": [],
+  "versions": {
+    "2.11.0": "61e7614b602201c28a189dafee78f5bceaee192bbde46a930752ff09cf5542fa"
+  }
+}

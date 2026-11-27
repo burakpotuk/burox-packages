@@ -1,0 +1,4 @@
+source-path=SCRIPTDIR
+external-sources=true
+# jq programs are intentionally single-quoted.
+disable=SC2016

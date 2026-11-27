@@ -1,0 +1,147 @@
+# Reusable workflow: build, verify, package, smoke-test and publish one package.
+# Called by build-<package>.yml. Every step runs the same scripts you can run
+# locally (scripts/build-package.sh <package> <version>).
+name: build-package
+
+on:
+  workflow_call:
+    inputs:
+      package:
+        description: Package name (directory under recipes/)
+        type: string
+        required: true
+      versions:
+        description: Space/comma separated versions; empty = every build in versions.json
+        type: string
+        default: ""
+      force:
+        description: Rebuild and replace versions that are already published
+        type: boolean
+        default: false
+      publish:
+        description: Create GitHub Releases and refresh the signed manifest
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  plan:
+    name: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      count: ${{ steps.plan.outputs.count }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Select versions to build
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PKG: ${{ inputs.package }}
+          VERSIONS: ${{ inputs.versions }}
+          FORCE: ${{ inputs.force }}
+          PUBLISH: ${{ inputs.publish }}
+        run: scripts/plan-builds.sh "$PKG" "$VERSIONS" "$FORCE" "$PUBLISH" >>"$GITHUB_OUTPUT"
+
+  build:
+    name: ${{ inputs.package }} ${{ matrix.published }}
+    needs: plan
+    if: needs.plan.outputs.count != '0'
+    # macos-14 runners were retired on 2026-11-02; we build on macOS 15 with
+    # MACOSX_DEPLOYMENT_TARGET=14.0 (see docs/DECISIONS.md ADR-003).
+    runs-on: macos-15
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    env:
+      PKG: ${{ inputs.package }}
+      VERSION: ${{ matrix.version }}
+      MACOSX_DEPLOYMENT_TARGET: "14.0"
+      HOMEBREW_NO_AUTO_UPDATE: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Tools
+        run: |
+          missing=()
+          command -v gpgv >/dev/null || missing+=(gnupg)
+          command -v jq >/dev/null || missing+=(jq)
+          if [ ${#missing[@]} -gt 0 ]; then brew install "${missing[@]}"; fi
+          sw_vers
+          xcodebuild -version
+          clang --version | head -n1
+
+      - name: Dependency cache key
+        id: depkey
+        run: |
+          key="$(scripts/build-package.sh --print-deps-key "$PKG" "$VERSION")"
+          prefix="deps-v1-${ImageOS:-macos}-$(uname -m)-"
+          {
+            echo "deps=$key"
+            echo "cache=$prefix$PKG-$key"
+            echo "prefix=$prefix"
+          } >>"$GITHUB_OUTPUT"
+
+      - name: Restore dependency cache
+        id: depcache
+        if: steps.depkey.outputs.deps != 'none'
+        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: build/dep-cache
+          key: ${{ steps.depkey.outputs.cache }}
+          restore-keys: |
+            ${{ steps.depkey.outputs.prefix }}${{ inputs.package }}-
+            ${{ steps.depkey.outputs.prefix }}
+
+      - name: Build dependencies (static)
+        if: steps.depkey.outputs.deps != 'none'
+        env:
+          BUROX_PRUNE_DEP_CACHE: "1"
+        run: scripts/build-package.sh --deps-only "$PKG" "$VERSION"
+
+      - name: Save dependency cache
+        if: steps.depkey.outputs.deps != 'none' && steps.depcache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5.1.0
+        with:
+          path: build/dep-cache
+          key: ${{ steps.depkey.outputs.cache }}
+
+      - name: Build, verify-relocatable, sign, package, smoke test
+        run: scripts/build-package.sh "$PKG" "$VERSION"
+
+      - name: Upload build output
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ inputs.package }}-${{ matrix.published }}
+          path: out/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Publish GitHub Release
+        if: inputs.publish
+        env:
+          BUROX_FORCE: ${{ inputs.force && '1' || '0' }}
+        run: scripts/publish-release.sh "$PKG" "$VERSION"
+
+  manifest:
+    name: manifest
+    needs: build
+    # Refresh the manifest when at least one matrix job ran (some may have failed).
+    if: inputs.publish && !cancelled() && (needs.build.result == 'success' || needs.build.result == 'failure')
+    permissions:
+      contents: write
+    uses: ./.github/workflows/publish-manifest.yml
+    secrets: inherit

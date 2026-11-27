@@ -1,0 +1,14 @@
+{
+  "name": "pcre2",
+  "version": "10.49",
+  "url": "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-{version}/pcre2-{version}.tar.gz",
+  "signature": "{url}.sig",
+  "keyring": "pcre2",
+  "license": [
+    "LICENCE.md"
+  ],
+  "requires": [],
+  "versions": {
+    "10.49": "929f0b20e62879252a15886b06c89f1edef61a363cbd5826fb041080a5e557ae"
+  }
+}

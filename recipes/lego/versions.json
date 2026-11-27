@@ -1,0 +1,11 @@
+{
+  "name": "lego",
+  "kind": "binary",
+  "deps": [],
+  "builds": [
+    {
+      "version": "5.8.0",
+      "channel": "stable"
+    }
+  ]
+}

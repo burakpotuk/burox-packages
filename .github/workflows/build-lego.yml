@@ -1,0 +1,46 @@
+# Build and publish lego. Versions come from recipes/lego/versions.json.
+#  - Run by hand: Actions > build-lego > Run workflow
+#  - Automatic: when recipes/lego/versions.json changes on main
+#  - Pull requests: build + smoke test only, nothing is published
+name: build-lego
+
+on:
+  workflow_dispatch:
+    inputs:
+      versions:
+        description: "Sürümler (boş = versions.json'daki hepsi; örn. 5.8.0)"
+        type: string
+        default: ""
+      force:
+        description: "Zaten yayınlanmış sürümü silip yeniden derle"
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - recipes/lego/versions.json
+  pull_request:
+    paths:
+      - recipes/lego/**
+      - scripts/**
+      - .github/workflows/build-lego.yml
+      - .github/workflows/build-package.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-lego-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    uses: ./.github/workflows/build-package.yml
+    with:
+      package: lego
+      versions: ${{ inputs.versions || '' }}
+      force: ${{ inputs.force == true }}
+      publish: ${{ github.event_name != 'pull_request' }}
+    secrets: inherit

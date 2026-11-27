@@ -1,0 +1,12 @@
+{
+  "name": "cloudflared",
+  "kind": "binary",
+  "minMacOS": "15.0",
+  "deps": [],
+  "builds": [
+    {
+      "version": "2026.11.2",
+      "channel": "stable"
+    }
+  ]
+}

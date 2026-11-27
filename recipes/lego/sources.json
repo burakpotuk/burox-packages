@@ -1,0 +1,9 @@
+{
+  "name": "lego",
+  "url": "https://github.com/go-acme/lego/releases/download/v{version}/lego_v{version}_darwin_arm64.tar.gz",
+  "checksumFile": "https://github.com/go-acme/lego/releases/download/v{version}/lego_{version}_checksums.txt",
+  "strip": 0,
+  "versions": {
+    "5.8.0": "df30413d0c193848d3531579075385caad487ec63841e8b7e2917dcbdb001f70"
+  }
+}

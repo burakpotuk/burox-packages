@@ -1,0 +1,18 @@
+{
+  "name": "apache",
+  "kind": "source",
+  "deps": [
+    "openssl",
+    "pcre2",
+    "zlib",
+    "expat",
+    "apr",
+    "apr-util"
+  ],
+  "builds": [
+    {
+      "version": "2.4.71",
+      "channel": "2.4"
+    }
+  ]
+}

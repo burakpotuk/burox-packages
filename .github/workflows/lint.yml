@@ -1,0 +1,51 @@
+# Fast checks on every push and pull request: shell/JSON/Python/workflow lint,
+# recipe consistency and the offline self-tests (manifest signing + tamper
+# rejection, SHA-256 pinning, and on macOS the otool portability check).
+name: lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: shellcheck
+        run: |
+          shellcheck --version | head -n2
+          find scripts recipes deps -name '*.sh' -print0 | xargs -0 shellcheck
+      - name: actionlint
+        run: docker run --rm -v "$PWD:/repo" --workdir /repo rhysd/actionlint:1.7.12 -color
+      - name: JSON is valid
+        run: find recipes deps -name '*.json' -print0 | xargs -0 -n1 jq empty
+      - name: Python compiles
+        run: python3 -m py_compile scripts/*.py scripts/lib/*.py
+      - name: Recipes are complete and pinned
+        run: scripts/check-recipes.sh
+      - name: Self-tests (Linux)
+        run: scripts/selftest.sh
+
+  selftest-macos:
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: OpenSSL 3
+        run: |
+          if [ ! -x "$(brew --prefix)/opt/openssl@3/bin/openssl" ]; then
+            HOMEBREW_NO_AUTO_UPDATE=1 brew install openssl@3
+          fi
+      - name: Self-tests (macOS, includes verify-relocatable)
+        run: scripts/selftest.sh

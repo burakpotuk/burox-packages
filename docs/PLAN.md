@@ -159,7 +159,7 @@ SPM bağımlılıkları (yalnızca bunlar; yenisi gerekirse `DECISIONS.md`'ye ge
 ### 3.1 Paket sistemi
 
 - Ayrı repo: `burakpotuk/burox-packages` (önerilen: public; içerik açık kaynak yazılımların derlemeleri, her paketin LICENSE dosyası içinde).
-- CI, `macos-14` (arm64) runner'larda derler. `MACOSX_DEPLOYMENT_TARGET=14.0`.
+- CI, `macos-15` (arm64) runner'larda derler (`macos-14` runner'ları 2026-11-02'de kaldırıldı; ADR-003). `MACOSX_DEPLOYMENT_TARGET=14.0`.
 - **Taşınabilirlik kuralı:** Her binary ve `.so` dosyası sadece `/usr/lib/` ve `/System/` altındaki kütüphanelere bağlanabilir. Diğer tüm bağımlılıklar statik linklenir. CI `otool -L` ile doğrular, ihlalde build kırılır.
 - Kaynak tarball'ları sabitlenmiş SHA-256 ile indirilir; upstream GPG/imza varsa doğrulanır.
 - Her paket CI'da smoke test'ten geçer (`php -v`, `php -m` beklenen liste, `nginx -t`, `httpd -t`, DB başlat/sorgula/durdur).
@@ -172,7 +172,7 @@ SPM bağımlılıkları (yalnızca bunlar; yenisi gerekirse `DECISIONS.md`'ye ge
       "sha256": "…", "size": 41234567, "minMacOS": "14.0",
       "meta": { "extensions": ["intl", "gd", "..."], "sharedExtensions": ["xdebug", "opcache", "redis", "..."] } } ] }
   ```
-  İmza: manifest baytları üzerinde Ed25519. Uygulamada 2 public key gömülü (anahtar rotasyonu için). İmzasız veya hatalı imzalı manifest **reddedilir**.
+  İmza: manifest baytları üzerinde Ed25519; `manifest.json.sig` = 64 baytlık imzanın tek satır base64'ü. Uygulamada 2 public key gömülü (anahtar rotasyonu için). İmzasız veya hatalı imzalı manifest **reddedilir**. Adres: `https://github.com/burakpotuk/burox-packages/releases/download/manifest/manifest.json` (+ `.sig`). Paket girdisindeki `minMacOS` 14.0'dan büyükse (ör. cloudflared: 15.0, ADR-006) uygulama o paketi eski macOS'ta sunmaz.
 - Uygulama: indir → SHA-256 doğrula → `tmp/` içine aç → atomik `rename` ile `packages/<ad>/<sürüm>/`. Kullanımdaki sürüm silinemez (hangi sitelerin kullandığı gösterilir).
 - Paket listesi:
 
@@ -183,7 +183,7 @@ SPM bağımlılıkları (yalnızca bunlar; yenisi gerekirse `DECISIONS.md`'ye ge
 | Apache httpd (event MPM; rewrite, headers, proxy, proxy_fcgi, remoteip, setenvif, expires, deflate) | kaynaktan | güncel 2.4.x |
 | MariaDB | kaynaktan (resmi macOS binary'si yok) | aktif LTS dalları |
 | MySQL | Oracle'ın resmi macOS arm64 tarball'ı, yeniden paketlenir | 8.0 (eski projeler için), 8.4 LTS, güncel |
-| Mailpit, cloudflared, lego, Meilisearch | resmi sürüm binary'leri, checksum doğrulanarak yeniden paketlenir | güncel |
+| Mailpit, cloudflared, lego, Meilisearch | resmi sürüm binary'leri, checksum doğrulanarak yeniden paketlenir (cloudflared upstream gereği macOS 15+) | güncel |
 | Redis, Memcached | kaynaktan | güncel |
 | MinIO | dağıtım politikası değişti; kaynaktan derleme veya alternatif — prompt 08'de karar | — |
 | Composer, WP-CLI, Adminer, phpMyAdmin | resmi dosyalar, imza/checksum doğrulanarak | güncel |
