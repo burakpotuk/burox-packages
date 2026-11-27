@@ -63,9 +63,12 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/dl"
           base="https://github.com/$GH_REPO/releases/download/manifest"
+          # The download URL can serve the previous file for a few minutes after
+          # an upload; a unique query string bypasses that edge cache.
           for _ in 1 2 3 4 5; do
-            curl -fsSL -o "$RUNNER_TEMP/dl/manifest.json" "$base/manifest.json"
-            curl -fsSL -o "$RUNNER_TEMP/dl/manifest.json.sig" "$base/manifest.json.sig"
+            bust="v=$GITHUB_RUN_ID-$RANDOM"
+            curl -fsSL -o "$RUNNER_TEMP/dl/manifest.json" "$base/manifest.json?$bust"
+            curl -fsSL -o "$RUNNER_TEMP/dl/manifest.json.sig" "$base/manifest.json.sig?$bust"
             if cmp -s "$RUNNER_TEMP/dl/manifest.json" out/manifest.json; then break; fi
             sleep 5
           done
