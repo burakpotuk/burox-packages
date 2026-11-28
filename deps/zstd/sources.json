@@ -1,0 +1,15 @@
+{
+  "name": "zstd",
+  "version": "1.6.0",
+  "url": "https://github.com/facebook/zstd/releases/download/v{version}/zstd-{version}.tar.gz",
+  "signature": "{url}.sig",
+  "keyring": "zstd",
+  "checksumFile": "{url}.sha256",
+  "license": [
+    "LICENSE"
+  ],
+  "requires": [],
+  "versions": {
+    "1.6.0": "2ba599ae2a257976278e7e71e998433a387bfd18aa7b78678229fd5d84f5e9b8"
+  }
+}

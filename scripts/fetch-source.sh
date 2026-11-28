@@ -16,13 +16,22 @@ set -euo pipefail
 #
 # sources.json fields:
 #   name          short name (used for records/licenses)
-#   url           URL template; {version} and {version_underscored} are substituted
+#   url           URL template; {version}, {version_underscored} (1_1_1w) and
+#                 {series} (major.minor, e.g. 2.15) are substituted
 #   mirrors       optional list of fallback URL templates (tried in order)
 #   signature     optional detached signature URL template; {url} = resolved url
 #   keyring       name of keys/upstream/<keyring>.asc (required with signature)
 #   checksumFile  optional official checksum file URL template ({url}, {version})
+#   checksumAlgo  algorithm used by that file: sha256 (default) or sha3-256
+#   checksumPinOnly  true if the checksum page only lists the latest release
+#                 (e.g. sqlite.org/download.html): checked by add-version.sh only
+#   noUpstreamVerification  reason, if upstream publishes no signature/checksum
+#                 at all (pin-time trust on first use; the pin protects later builds)
 #   strip         --strip-components for extraction (default 1)
-#   versions      { "<version>": "<sha256>" }
+#   versions      { "<version>": "<sha256>" } or
+#                 { "<version>": {"sha256": "<sha256>", "url": "<exact url>"} }
+#                 (per-version URL for upstreams whose path is not derivable,
+#                 e.g. SQLite's /<year>/sqlite-autoconf-3540100.tar.gz)
 
 # shellcheck source=lib/common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
@@ -50,6 +59,7 @@ expand() {
   # Expand {version}, {version_underscored} and {url} placeholders.
   local t="$1"
   t="${t//\{version_underscored\}/${VERSION//./_}}"
+  t="${t//\{series\}/$(printf '%s' "$VERSION" | cut -d. -f1-2)}"
   t="${t//\{version\}/$VERSION}"
   t="${t//\{url\}/${URL:-}}"
   printf '%s' "$t"
@@ -60,7 +70,9 @@ NAME="$(field name)"
 [[ -n "$(field url)" ]] || die "$SOURCES_JSON: missing 'url'"
 KEYRING="$(field keyring)"
 STRIP="$(jq -r '.strip // 1' "$SOURCES_JSON")"
-PINNED="$(jq -r --arg v "$VERSION" '.versions[$v] // empty' "$SOURCES_JSON")"
+PINNED="$(jq -r --arg v "$VERSION" '.versions[$v] | if type == "object" then .sha256 else . end // empty' "$SOURCES_JSON")"
+VERSION_URL="$(jq -r --arg v "$VERSION" '.versions[$v] | if type == "object" then .url else empty end // empty' "$SOURCES_JSON")"
+VERSION_URL="${VERSION_URL:-${BUROX_SOURCE_URL:-}}"
 
 if [[ "$PIN" == "0" && -z "$PINNED" ]]; then
   die "$SOURCES_JSON has no pinned sha256 for version $VERSION (run scripts/add-version.sh)"
@@ -88,7 +100,11 @@ download() { try_download "$1" "$2" || die "download failed: $1"; }
 
 url_key() { printf '%s' "$1" | sha256_stdin | cut -c1-16; }
 
-CANDIDATES=("$(expand "$(field url)")")
+if [[ -n "$VERSION_URL" ]]; then
+  CANDIDATES=("$VERSION_URL")
+else
+  CANDIDATES=("$(expand "$(field url)")")
+fi
 while IFS= read -r m; do
   [[ -n "$m" ]] && CANDIDATES+=("$(expand "$m")")
 done < <(jq -r '.mirrors[]?' "$SOURCES_JSON")
@@ -139,7 +155,18 @@ if [[ -n "$SIG_URL" ]]; then
   STATUS="$(GNUPGHOME="$GPG_TMP" gpgv --keyring "$GPG_TMP/ring.gpg" --status-fd 1 \
               "$SIG_FILE" "$ARCHIVE" 2>/dev/null || true)"
   rm -rf "$GPG_TMP"
-  if ! grep -q '^\[GNUPG:\] GOODSIG ' <<<"$STATUS"; then
+  if grep -q '^\[GNUPG:\] GOODSIG ' <<<"$STATUS"; then
+    :
+  elif grep -q '^\[GNUPG:\] EXPKEYSIG ' <<<"$STATUS" && grep -q '^\[GNUPG:\] VALIDSIG ' <<<"$STATUS"; then
+    # Good signature by a key that has expired since. Accept it only if the
+    # signature was made before the key expired (old releases, e.g. OpenSSL 1.1.1w).
+    SIG_TS="$(awk '$2 == "VALIDSIG" {print $5; exit}' <<<"$STATUS")"
+    KEY_EXP="$(awk '$2 == "KEYEXPIRED" {print $3; exit}' <<<"$STATUS")"
+    if [[ -z "$SIG_TS" || -z "$KEY_EXP" || "$SIG_TS" -ge "$KEY_EXP" ]]; then
+      die "$NAME $VERSION: signature made after the signing key expired ($SIG_URL)"
+    fi
+    warn "$NAME $VERSION: signing key has expired since, but the signature predates the expiry"
+  else
     die "$NAME $VERSION: GPG signature verification FAILED ($SIG_URL, keyring $KEYRING)"
   fi
   # VALIDSIG <sig-fpr> ... <primary-key-fpr>
@@ -149,26 +176,39 @@ if [[ -n "$SIG_URL" ]]; then
 fi
 
 # --- Official checksum file -----------------------------------------------------
+SUM_ALGO="$(jq -r '.checksumAlgo // "sha256"' "$SOURCES_JSON")"
+if [[ -n "$SUM_URL" && "$PIN" == "0" && "$(jq -r '.checksumPinOnly // false' "$SOURCES_JSON")" == "true" ]]; then
+  SUM_URL=""   # page only describes the newest release; verified when pinning
+fi
 if [[ -n "$SUM_URL" ]]; then
+  case "$SUM_ALGO" in
+    sha256) SUM_ACTUAL="$ACTUAL" ;;
+    sha3-256)
+      O3="$(find_openssl3)" || die "OpenSSL 3 is required for SHA3-256 (brew install openssl@3)"
+      SUM_ACTUAL="$("$O3" dgst -sha3-256 -r "$ARCHIVE" | awk '{print $1}')" ;;
+    *) die "$SOURCES_JSON: unsupported checksumAlgo $SUM_ALGO" ;;
+  esac
   SUM_FILE="$ARCHIVE.checksums"
   download "$SUM_URL" "$SUM_FILE"
   BASE="$(basename "$URL")"
-  # Prefer the line that names our file ("<hash>  <file>", "<hash> *<file>" or
-  # "SHA256(<file>)= <hash>"); fall back to a file containing a single hash.
-  hashes_in() { awk '{ for (i = 1; i <= NF; i++) if (length($i) == 64 && $i ~ /^[0-9a-fA-F]+$/) print $i }'; }
-  EXPECTED="$(awk -v f="$BASE" '{ n = $NF; sub(/^\*/, "", n); if (n == f || index($0, "(" f ")") > 0) print }' "$SUM_FILE" \
+  # Prefer the line that names our file ("<hash>  <file>", "<hash> *<file>",
+  # "SHA256(<file>)= <hash>" or CSV "...,<dir>/<file>,<size>,<hash>"); fall back
+  # to a file containing a single hash.
+  hashes_in() { awk '{ n = split($0, t, /[ \t,;()=*]+/); for (i = 1; i <= n; i++) if (length(t[i]) == 64 && t[i] ~ /^[0-9a-fA-F]+$/) print t[i] }'; }
+  EXPECTED="$(awk -v f="$BASE" '{ n = split($0, t, /[ \t,;()=*]+/);
+                for (i = 1; i <= n; i++) { k = t[i]; if (k == f || substr(k, length(k) - length(f)) == "/" f) { print; next } } }' "$SUM_FILE" \
               | hashes_in | head -n1)"
   if [[ -z "$EXPECTED" && "$(hashes_in <"$SUM_FILE" | wc -l | tr -d ' ')" == "1" ]]; then
     EXPECTED="$(hashes_in <"$SUM_FILE")"
   fi
   [[ -n "$EXPECTED" ]] || die "$NAME $VERSION: no SHA-256 for $BASE in $SUM_URL"
   EXPECTED="$(tr 'A-F' 'a-f' <<<"$EXPECTED")"
-  if [[ "$EXPECTED" != "$ACTUAL" ]]; then
-    die "$NAME $VERSION: official checksum mismatch ($SUM_URL)
+  if [[ "$EXPECTED" != "$SUM_ACTUAL" ]]; then
+    die "$NAME $VERSION: official $SUM_ALGO checksum mismatch ($SUM_URL)
   official: $EXPECTED
-  actual:   $ACTUAL"
+  actual:   $SUM_ACTUAL"
   fi
-  log "$NAME $VERSION: official checksum file matches"
+  log "$NAME $VERSION: official $SUM_ALGO checksum matches"
   VERIFIED+=("checksum-file")
 fi
 
@@ -194,7 +234,12 @@ if [[ "$PIN" == "1" && "$URL" =~ ^https://github\.com/([^/]+)/([^/]+)/releases/d
 fi
 
 if [[ "$PIN" == "1" ]]; then
-  [[ ${#VERIFIED[@]} -gt 0 ]] || die "$NAME $VERSION: no upstream verification available; refusing to pin"
+  if [[ ${#VERIFIED[@]} -eq 0 ]]; then
+    REASON="$(field noUpstreamVerification)"
+    [[ -n "$REASON" ]] || die "$NAME $VERSION: no upstream verification available; refusing to pin (set \"noUpstreamVerification\": \"<why>\" in $SOURCES_JSON only if upstream publishes nothing)"
+    warn "$NAME $VERSION: pinning without upstream verification: $REASON"
+    VERIFIED+=("none")
+  fi
   log "$NAME $VERSION: verified via ${VERIFIED[*]}"
   printf '%s\n' "$ACTUAL"
   exit 0

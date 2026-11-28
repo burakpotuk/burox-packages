@@ -1,0 +1,17 @@
+{
+  "name": "curl",
+  "version": "8.23.0",
+  "url": "https://curl.se/download/curl-{version}.tar.xz",
+  "signature": "{url}.asc",
+  "keyring": "curl",
+  "license": [
+    "COPYING"
+  ],
+  "requires": [
+    "openssl",
+    "zlib"
+  ],
+  "versions": {
+    "8.23.0": "8dadd7d2536a314f982ad05a651b713f426bf7d02cc2c76cffb9796f2218e6c5"
+  }
+}

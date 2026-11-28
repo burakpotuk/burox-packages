@@ -14,10 +14,13 @@ alınan anahtarlardan üretildi (2026-11-27).
 | | `7338973069ED3F443F4D37DFA64FD5B17ADB39A8` | Sergey Budnevitch | 〃 |
 | `apache.asc` | `65B2D44FE74BD5E3DE3AC3F082781DE46D5954FA` | Eric Covener | https://downloads.apache.org/httpd/KEYS , https://downloads.apache.org/apr/KEYS |
 | | `CBA1525BAA7A47BE28FF23DDD3B13FCA2CE60BED` | Graham Leggett | https://downloads.apache.org/apr/KEYS |
-| `openssl.asc` | `B146647E45A7B33947AB226B2A2C87D161692D40` | OpenSSL <openssl@openssl.org> | `doc/fingerprints.txt` (openssl reposu) |
+| `openssl.asc` | `B146647E45A7B33947AB226B2A2C87D161692D40` | OpenSSL <openssl@openssl.org> (3.x) | `packaging/common/openssl-release-keys.asc` (openssl/packages reposu) ve `doc/fingerprints.txt` |
+| | `BA5473A2B0587B07FB27CF2D216094DFD0CB81EF` | OpenSSL (eski anahtar) | 〃 |
+| | `EFC0A467D613CB83C7ED6D30D894E2CE8B3D79F5` | OpenSSL OMC / security team (1.1.1w) | `packaging/common/openssl-release-keys.asc` |
 | `pcre2.asc` | `A95536204A3BB489715231282A98E77EB6F24CA8` | Nicholas Wilson | `SECURITY.md` (pcre2 reposu) |
 | `zlib.asc` | `5ED46A6721D365587791E2AA783FCD8E58BCAFBA` | Mark Adler | https://madler.net/madler/pgp.html |
 | `expat.asc` | `3176EF7DB2367F1FCA4F306B1F9B0E909AF37285` | Sebastian Pipping | libexpat sürüm imzaları |
+| `php.asc` | 20 anahtar (PHP sürüm yöneticileri) | php.net | https://www.php.net/distributions/php-keyring.gpg (resmi anahtarlık). `39B641343D8C104B2B146DC3F9C39DC0B9698544` (Ben Ramsey, 8.0/8.1) için süresi 2027-01-02'ye uzatılmış öz-imza keys.openpgp.org'dan eklendi; php.net'teki kopya 2025-11-24'te bitmiş görünüyor. |
 
 ## Yeni bir imzacı gelirse
 

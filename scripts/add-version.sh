@@ -11,6 +11,9 @@ set -euo pipefail
 #   add-version.sh --dep <dependency> <version>
 #       deps/<dependency>/sources.json: version + pinned sha256 (old pin removed)
 #
+#   --url <exact-url>: for upstreams whose download path is not derivable from
+#       the version (SQLite); stored next to the pin in sources.json.
+#
 # Example: scripts/add-version.sh nginx 1.30.9 --replace
 
 # shellcheck source=lib/common.sh
@@ -20,12 +23,14 @@ require_cmd jq
 DEP=0
 CHANNEL=""
 REPLACE=0
+URL_OVERRIDE=""
 ARGS=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --dep) DEP=1; shift ;;
     --channel) CHANNEL="$2"; shift 2 ;;
     --replace) REPLACE=1; shift ;;
+    --url) URL_OVERRIDE="$2"; shift 2 ;;
     -h|--help) sed -n '3,15p' "$0"; exit 0 ;;
     -*) die "unknown option: $1" ;;
     *) ARGS+=("$1"); shift ;;
@@ -43,7 +48,7 @@ else
 fi
 [[ -f "$SOURCES" ]] || die "not found: $SOURCES"
 
-SHA="$("$ROOT_DIR/scripts/fetch-source.sh" --pin "$SOURCES" "$VERSION" | tail -n1)"
+SHA="$(BUROX_SOURCE_URL="$URL_OVERRIDE" "$ROOT_DIR/scripts/fetch-source.sh" --pin "$SOURCES" "$VERSION" | tail -n1)"
 [[ "$SHA" =~ ^[0-9a-f]{64}$ ]] || die "could not determine sha256"
 
 write_json() {
@@ -56,12 +61,14 @@ write_json() {
 }
 
 if [[ "$DEP" == "1" ]]; then
-  write_json "$SOURCES" '.version = $v | .versions = {($v): $sha}' --arg v "$VERSION" --arg sha "$SHA"
+  write_json "$SOURCES" '.version = $v | .versions = {($v): (if $url == "" then $sha else {sha256: $sha, url: $url} end)}' \
+    --arg v "$VERSION" --arg sha "$SHA" --arg url "$URL_OVERRIDE"
   log "pinned dependency $NAME $VERSION ($SHA)"
   exit 0
 fi
 
-write_json "$SOURCES" '.versions[$v] = $sha' --arg v "$VERSION" --arg sha "$SHA"
+write_json "$SOURCES" '.versions[$v] = (if $url == "" then $sha else {sha256: $sha, url: $url} end)' \
+  --arg v "$VERSION" --arg sha "$SHA" --arg url "$URL_OVERRIDE"
 
 VERSIONS="$(recipe_dir "$NAME")/versions.json"
 [[ -f "$VERSIONS" ]] || die "not found: $VERSIONS"

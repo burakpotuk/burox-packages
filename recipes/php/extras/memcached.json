@@ -1,0 +1,15 @@
+{
+  "name": "memcached",
+  "url": "https://pecl.php.net/get/memcached-{version}.tgz",
+  "noUpstreamVerification": "PECL publishes no signatures or checksums for source tarballs; SHA-256 pinned on first download",
+  "license": [
+    "LICENSE"
+  ],
+  "versions": {
+    "3.4.0": "c163434eb0da97c8f45c7ad41d979d381f8b81c49402b1b90b063987fb37972e",
+    "3.4.1-dev.0b52d36571": {
+      "sha256": "464238bc82b70dde84b8ae40bf4bb466281b976e545fd67b8ab2af83bd0b1448",
+      "url": "https://github.com/php-memcached-dev/php-memcached/archive/0b52d3657140750fa0eddd20cdbfc6edc8fbdadd.tar.gz"
+    }
+  }
+}

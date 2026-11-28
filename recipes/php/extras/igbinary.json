@@ -1,0 +1,16 @@
+{
+  "name": "igbinary",
+  "url": "https://pecl.php.net/get/igbinary-{version}.tgz",
+  "noUpstreamVerification": "PECL publishes no signatures or checksums for source tarballs; SHA-256 pinned on first download",
+  "license": [
+    "COPYING"
+  ],
+  "versions": {
+    "3.2.16": "8bf25d465abc7973d9e2c9a3039a5f8eea635b23bc1477017ff3999ff95836da",
+    "3.2.17-dev.fe33bf9ec0": {
+      "sha256": "f6f7a0633e04714eb38b8ec4e96b7a1eccf04d78eb100129c536b9c62b063a08",
+      "url": "https://github.com/igbinary/igbinary/archive/fe33bf9ec03e97e2290a090abc72326e6910f5c1.tar.gz"
+    },
+    "3.2.17RC1": "91da821443db125282a6aea039f24588dd28ff5d71e8187f6ecc41165bceafbc"
+  }
+}

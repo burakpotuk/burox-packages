@@ -1,0 +1,15 @@
+{
+  "name": "libzip",
+  "version": "1.12.1",
+  "url": "https://github.com/nih-at/libzip/releases/download/v{version}/libzip-{version}.tar.xz",
+  "license": [
+    "LICENSE"
+  ],
+  "requires": [
+    "zlib",
+    "zstd"
+  ],
+  "versions": {
+    "1.12.1": "c40062022a1963c80573d48f6070792297cecd7c6bffe3aefcac0d8b9bee8913"
+  }
+}

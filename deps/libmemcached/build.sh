@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# libmemcached-awesome (memcached extension), static, no SASL/TLS.
+cmake -S . -B _build -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX="$PREFIX" -DCMAKE_INSTALL_LIBDIR=lib \
+  -DCMAKE_OSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET" -DCMAKE_OSX_ARCHITECTURES=arm64 \
+  -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF -DBUILD_DOCS=OFF \
+  -DENABLE_SASL=OFF -DENABLE_OPENSSL_CRYPTO=OFF -DENABLE_DTRACE=OFF -DENABLE_MEMASLAP=OFF
+cmake --build _build -j"$JOBS"
+DESTDIR="$DESTDIR" cmake --install _build

@@ -1,0 +1,48 @@
+# Build and publish PHP (one matrix job per branch). Versions come from
+# recipes/php/versions.json.
+#  - Run by hand: Actions > build-php > Run workflow (optionally a single version)
+#  - Automatic: when recipes/php/versions.json changes on main
+#  - Pull requests: build + smoke test only, nothing is published
+name: build-php
+
+on:
+  workflow_dispatch:
+    inputs:
+      versions:
+        description: "Sürümler (boş = versions.json'daki hepsi; örn. 8.4.28 veya 7.4.33,8.6.0)"
+        type: string
+        default: ""
+      force:
+        description: "Zaten yayınlanmış sürümü silip yeniden derle"
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - recipes/php/versions.json
+  pull_request:
+    paths:
+      - recipes/php/**
+      - deps/**
+      - scripts/**
+      - .github/workflows/build-php.yml
+      - .github/workflows/build-package.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-php-${{ github.event_name == 'pull_request' && github.ref || 'main' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    uses: ./.github/workflows/build-package.yml
+    with:
+      package: php
+      versions: ${{ inputs.versions || '' }}
+      force: ${{ inputs.force == true }}
+      publish: ${{ github.event_name != 'pull_request' }}
+    secrets: inherit

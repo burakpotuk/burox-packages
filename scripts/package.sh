@@ -45,8 +45,8 @@ find "$STAGE" -name '.DS_Store' -delete
 for entry in "$STAGE"/* "$STAGE"/.[!.]*; do
   [[ -e "$entry" ]] || continue
   case "$(basename "$entry")" in
-    bin|sbin|lib|share|etc-default) ;;
-    *) die "unexpected top-level entry in package: $(basename "$entry") (allowed: bin sbin lib share etc-default)" ;;
+    bin|sbin|lib|include|share|etc-default) ;;
+    *) die "unexpected top-level entry in package: $(basename "$entry") (allowed: bin sbin lib include share etc-default)" ;;
   esac
 done
 if find "$STAGE" \( -name '*.a' -o -name '*.la' \) | grep -q .; then
@@ -89,10 +89,13 @@ done
 log "signed ${#MACHO[@]} Mach-O file(s)"
 
 "$ROOT_DIR/scripts/verify-relocatable.sh" --min-macos "$PKG_MIN_MACOS" "$STAGE"
+"$ROOT_DIR/scripts/verify-plugin-symbols.sh" "$STAGE"
 
 # --- PACKAGE.json -------------------------------------------------------------------
 META='{}'
 [[ -f "$WORK/meta.json" ]] && META="$(jq -c . "$WORK/meta.json")"
+# Lifecycle flags from versions.json (e.g. PHP 7.4: "eol": true, "securityNote": "...").
+META="$(jq -c --argjson e "$ENTRY" '. + ($e | {eol, securityNote} | with_entries(select(.value != null))) + ($e.meta // {})' <<<"$META")"
 SOURCES='[]'
 if compgen -G "$WORK/records/*.json" >/dev/null; then
   SOURCES="$(jq -cs . "$WORK"/records/*.json)"
@@ -130,14 +133,19 @@ mkdir -p "$OUT_DIR"
 ARCHIVE="$OUT_DIR/$BASE.tar.xz"
 rm -f "$ARCHIVE" "$ARCHIVE.sha256" "$OUT_DIR/$BASE.package.json"
 ENTRIES=()
-for e in PACKAGE.json bin sbin lib share etc-default; do
+for e in PACKAGE.json bin sbin lib include share etc-default; do
   [[ -e "$STAGE/$e" ]] && ENTRIES+=("$e")
 done
-COPYFILE_DISABLE=1 tar -C "$STAGE" \
-  --uid 0 --gid 0 --uname root --gname wheel \
-  --no-mac-metadata --no-xattrs --no-acls --no-fflags \
-  --options xz:compression-level=9 \
-  -cJf "$ARCHIVE" "${ENTRIES[@]}"
+TAR_OPTS=(--uid 0 --gid 0 --uname root --gname wheel --no-mac-metadata --no-xattrs --no-acls --no-fflags)
+if command -v xz >/dev/null 2>&1; then
+  # 128 MiB dictionary: bin/php and sbin/php-fpm are ~70 MB near-identical files;
+  # with xz's default 64 MiB window the second copy is not deduplicated (archive
+  # 35 MB instead of 19 MB). Decompression needs ~129 MiB of memory.
+  COPYFILE_DISABLE=1 tar -C "$STAGE" "${TAR_OPTS[@]}" -cf - "${ENTRIES[@]}" \
+    | xz --lzma2=preset=9,dict=128MiB -T0 -c >"$ARCHIVE"
+else
+  COPYFILE_DISABLE=1 tar -C "$STAGE" "${TAR_OPTS[@]}" --options xz:compression-level=9 -cJf "$ARCHIVE" "${ENTRIES[@]}"
+fi
 
 SHA="$(sha256_file "$ARCHIVE")"
 SIZE="$(file_size "$ARCHIVE")"

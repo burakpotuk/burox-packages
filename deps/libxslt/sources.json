@@ -1,0 +1,15 @@
+{
+  "name": "libxslt",
+  "version": "1.1.45",
+  "url": "https://download.gnome.org/sources/libxslt/{series}/libxslt-{version}.tar.xz",
+  "checksumFile": "https://download.gnome.org/sources/libxslt/{series}/libxslt-{version}.sha256sum",
+  "license": [
+    "Copyright"
+  ],
+  "requires": [
+    "libxml2"
+  ],
+  "versions": {
+    "1.1.45": "9acfe68419c4d06a45c550321b3212762d92f41465062ca4ea19e632ee5d216e"
+  }
+}

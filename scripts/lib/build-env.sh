@@ -26,8 +26,22 @@ export PKG_CONFIG_LIBDIR="${DEPS_PREFIX}/lib/pkgconfig:${DEPS_PREFIX}/share/pkgc
 export PKG_CONFIG_PATH=""
 unset LIBRARY_PATH CPATH C_INCLUDE_PATH CPLUS_INCLUDE_PATH DYLD_LIBRARY_PATH DYLD_FALLBACK_LIBRARY_PATH
 
-# Keep Homebrew tools (pcre2-config, xml2-config, ...) out of configure's PATH lookups.
-BUROX_CLEAN_PATH="${DEPS_PREFIX}/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-export PATH="${BUROX_CLEAN_PATH}"
+# Build tools that live outside the system dirs (Homebrew on the runner) are
+# exposed through a private tools dir; everything else Homebrew has (libraries,
+# pcre2-config, xml2-config, ...) stays invisible to configure scripts.
+BUROX_TOOLS_DIR="${DEPS_PREFIX%/*}/tools-bin"
+rm -rf "$BUROX_TOOLS_DIR"
+mkdir -p "$BUROX_TOOLS_DIR"
+for _t in autoconf autoheader autoreconf autom4te aclocal automake libtoolize cmake; do
+  if _p="$(command -v "$_t" 2>/dev/null)"; then ln -sf "$_p" "$BUROX_TOOLS_DIR/$_t"; fi
+done
+if _p="$(command -v pkg-config 2>/dev/null || command -v pkgconf 2>/dev/null)"; then
+  # Static linking needs the private dependencies (Libs.private) of every .pc.
+  printf '#!/bin/sh\nexec "%s" --static "$@"\n' "$_p" >"$BUROX_TOOLS_DIR/pkg-config"
+  chmod +x "$BUROX_TOOLS_DIR/pkg-config"
+fi
+unset _t _p
+export PHP_AUTOCONF="$BUROX_TOOLS_DIR/autoconf" PHP_AUTOHEADER="$BUROX_TOOLS_DIR/autoheader"
+export PATH="${DEPS_PREFIX}/bin:${BUROX_TOOLS_DIR}:/usr/bin:/bin:/usr/sbin:/sbin"
 
 export JOBS="${JOBS:-$( (sysctl -n hw.ncpu 2>/dev/null || echo 4) )}"

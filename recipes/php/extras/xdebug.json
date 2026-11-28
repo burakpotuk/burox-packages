@@ -1,0 +1,16 @@
+{
+  "name": "xdebug",
+  "url": "https://pecl.php.net/get/xdebug-{version}.tgz",
+  "noUpstreamVerification": "PECL and xdebug.org publish no signatures or checksums for source tarballs; SHA-256 pinned on first download",
+  "license": [
+    "LICENSE"
+  ],
+  "versions": {
+    "3.5.3": "f073de91bea046106abf4d6071c963ea71e58571df6ce58948ceca89d121cb2d",
+    "3.1.6": "554eca0b4d5b7b93cb2258fab0b0bd84cc8721e74322a2255c14e137cbcad5d2",
+    "3.6.0alpha1": {
+      "sha256": "e4f1ad4de249cb1f64173bbace2ae6d5974537053830a6b16e0f1f19c6fa2f3c",
+      "url": "https://github.com/xdebug/xdebug/archive/refs/tags/3.6.0alpha1.tar.gz"
+    }
+  }
+}

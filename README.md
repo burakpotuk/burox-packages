@@ -28,6 +28,7 @@ public anahtardan biriyle doğrular; imzasız/hatalı manifest reddedilir.
 | `mailpit` | resmi binary (GitHub asset digest) | `bin/mailpit` |
 | `cloudflared` | resmi binary (sürüm notlarındaki SHA-256 + Cloudflare Developer ID imzası) — **macOS 15+** | `bin/cloudflared` |
 | `lego` | resmi binary (resmi checksums.txt) | `bin/lego` |
+| `php` | php.net (GPG) 7.4 → 8.6, 19 statik bağımlılık (OpenSSL, ICU, libxml2, curl, gd kütüphaneleri, …) | `bin/php`, `sbin/php-fpm`, `bin/phpize`, `bin/php-config`, `lib/php/extensions/*.so` (opcache ≤ 8.4, xdebug, igbinary, apcu, redis, memcached), `include/php`, `etc-default/php.ini-*` |
 
 Her arşiv: `<ad>-<sürüm>-darwin-arm64.tar.xz`; kökte `PACKAGE.json` (sürüm, kaynaklar,
 checksum'lar, imza anahtarları, statik bağımlılıklar, modül listesi) ve
@@ -38,16 +39,22 @@ checksum'lar, imza anahtarları, statik bağımlılıklar, modül listesi) ve
 ```sh
 sbin/nginx -p <prefix>/ -c <nginx.conf> -e <error.log>
 sbin/httpd -d <paket-kökü> -f <httpd.conf>      # LoadModule lib/httpd/modules/mod_x.so
+bin/php -c <php.ini> -d extension_dir=<paket-kökü>/lib/php/extensions
+sbin/php-fpm -y <fpm.conf> -c <php.ini>
 ```
+
+PHP: ≥ 8.5'te OPcache yerleşiktir (`opcache.so` yoktur); `redis.so` ve `memcached.so`
+`igbinary.so`'dan **sonra** yüklenmelidir (`PACKAGE.json` → `meta.sharedExtensionRequires`).
+EOL dallar (`meta.eol`, `meta.securityNote`) ve ön sürüm uzantılar (`meta.prerelease`) işaretlidir.
 
 ## Repo düzeni
 
 ```
 recipes/<paket>/   sources.json (URL şablonu + sabit SHA-256'lar), versions.json (derlenecek sürümler),
-                   build.sh, smoke-test.sh
+                   build.sh, smoke-test.sh, extras/*.json (ör. PHP'nin PECL uzantıları)
 deps/<bağımlılık>/ sources.json, build.sh  (statik kütüphaneler, CI'da önbellekli)
 scripts/           build-package.sh (her şeyi yapan giriş noktası), fetch-source.sh, build-deps.sh,
-                   verify-relocatable.sh, package.sh, publish-release.sh, plan-builds.sh,
+                   verify-relocatable.sh, verify-plugin-symbols.sh, package.sh, publish-release.sh, plan-builds.sh,
                    make-manifest.py, sign-manifest.sh, verify-manifest.sh,
                    generate-signing-keys.sh, add-version.sh, check-recipes.sh, selftest.sh
 keys/              manifest-public-*.pem (yalnızca public), upstream/*.asc (upstream GPG anahtarları)

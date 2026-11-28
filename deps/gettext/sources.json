@@ -1,0 +1,14 @@
+{
+  "name": "gettext",
+  "version": "0.26",
+  "url": "https://ftp.gnu.org/gnu/gettext/gettext-{version}.tar.xz",
+  "signature": "{url}.sig",
+  "keyring": "gettext",
+  "license": [
+    "gettext-runtime/intl/COPYING.LIB"
+  ],
+  "requires": [],
+  "versions": {
+    "0.26": "d1fb86e260cfe7da6031f94d2e44c0da55903dbae0a2fa0fae78c91ae1b56f00"
+  }
+}

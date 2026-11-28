@@ -1,0 +1,13 @@
+{
+  "name": "libmemcached",
+  "version": "1.1.4",
+  "url": "https://github.com/awesomized/libmemcached/archive/refs/tags/{version}.tar.gz",
+  "noUpstreamVerification": "libmemcached-awesome publishes only git tags (no signed tarballs or checksums); SHA-256 of the tag archive pinned on first download",
+  "license": [
+    "LICENSE"
+  ],
+  "requires": [],
+  "versions": {
+    "1.1.4": "c477e1f6510e1dc698e84f3717ce690a8f65b94c616ecaa62306cce0f5e3116a"
+  }
+}

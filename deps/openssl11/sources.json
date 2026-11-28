@@ -1,0 +1,15 @@
+{
+  "name": "openssl11",
+  "version": "1.1.1w",
+  "url": "https://github.com/openssl/openssl/releases/download/OpenSSL_{version_underscored}/openssl-{version}.tar.gz",
+  "signature": "{url}.asc",
+  "keyring": "openssl",
+  "checksumFile": "{url}.sha256",
+  "license": [
+    "LICENSE"
+  ],
+  "requires": [],
+  "versions": {
+    "1.1.1w": "cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8"
+  }
+}

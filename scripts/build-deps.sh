@@ -121,7 +121,7 @@ build_one() {
   while IFS= read -r -d '' la; do
     sed -i.bak -e "s/^dlname=.*/dlname=''/" -e "s/^library_names=.*/library_names=''/" "$la"
     rm -f "$la.bak"
-  done < <(find "$root" -name '*.la' -print0)
+  done < <(find "$root" -name '*.la' -type f -print0)
 
   mkdir -p "$root/share/burox-deps" "$root/share/licenses/$d"
   cp "$work/record.json" "$root/share/burox-deps/$d.json"

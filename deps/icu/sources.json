@@ -1,0 +1,14 @@
+{
+  "name": "icu",
+  "version": "79.1",
+  "url": "https://github.com/unicode-org/icu/releases/download/release-{version}/icu4c-{version}-sources.tgz",
+  "signature": "{url}.asc",
+  "keyring": "icu",
+  "license": [
+    "LICENSE"
+  ],
+  "requires": [],
+  "versions": {
+    "79.1": "06fa63ecb521048f8082f12ad988f6b678d90cbd88aafce24cbc94902b191d99"
+  }
+}

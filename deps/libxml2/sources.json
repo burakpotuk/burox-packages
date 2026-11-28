@@ -1,0 +1,15 @@
+{
+  "name": "libxml2",
+  "version": "2.15.4",
+  "url": "https://download.gnome.org/sources/libxml2/{series}/libxml2-{version}.tar.xz",
+  "checksumFile": "https://download.gnome.org/sources/libxml2/{series}/libxml2-{version}.sha256sum",
+  "license": [
+    "Copyright"
+  ],
+  "requires": [
+    "zlib"
+  ],
+  "versions": {
+    "2.15.4": "98087fd181d9070724f3fbc65c7377db03038eb92bd882374daff44940138821"
+  }
+}

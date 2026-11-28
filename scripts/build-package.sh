@@ -11,7 +11,8 @@ set -euo pipefail
 #
 # Recipe contract (recipes/<package>/build.sh), run with cwd = $SRC_DIR and:
 #   PKG_NAME, PKG_VERSION (upstream), PKG_PUBLISHED_VERSION, SRC_DIR, STAGE_DIR,
-#   WORK_DIR, RECIPE_DIR, DEPS_PREFIX (+ JOBS and the compiler env from
+#   WORK_DIR, RECIPE_DIR, EXTRAS_DIR (extracted "extras"), BUILD_ENTRY (the
+#   versions.json build entry as JSON), DEPS_PREFIX (+ JOBS and the compiler env from
 #   scripts/lib/build-env.sh for "kind": "source" recipes)
 # It must populate $STAGE_DIR (bin/ sbin/ lib/ share/ etc-default/), install
 # upstream licenses into $STAGE_DIR/share/licenses/$PKG_NAME/ and may write
@@ -73,12 +74,23 @@ rm -f "$OUT_DIR/$BASE.smoke-passed"
 "$ROOT_DIR/scripts/fetch-source.sh" --record "$WORK/records/$PKG.json" \
   "$RECIPE/sources.json" "$VERSION" "$WORK/src"
 
+# Extra sources pinned per build, e.g. PECL extensions for PHP:
+#   versions.json build entry: "extras": {"xdebug": "3.5.3"}
+#   source description:        recipes/<package>/extras/xdebug.json
+mkdir -p "$WORK/extras"
+while IFS=$'\t' read -r ename ever; do
+  [[ -n "$ename" ]] || continue
+  "$ROOT_DIR/scripts/fetch-source.sh" --record "$WORK/records/$ename.json" \
+    "$RECIPE/extras/$ename.json" "$ever" "$WORK/extras/$ename"
+done < <(jq -r '(.extras // {}) | to_entries[] | [.key, .value] | @tsv' <<<"$ENTRY")
+
 "$ROOT_DIR/scripts/build-deps.sh" ${DEPS[@]+"${DEPS[@]}"}
 
 group_start "build $PKG $PUBVER"
 (
   export PKG_NAME="$PKG" PKG_VERSION="$VERSION" PKG_PUBLISHED_VERSION="$PUBVER" \
-         SRC_DIR="$WORK/src" STAGE_DIR="$WORK/stage" WORK_DIR="$WORK" RECIPE_DIR="$RECIPE"
+         SRC_DIR="$WORK/src" STAGE_DIR="$WORK/stage" WORK_DIR="$WORK" RECIPE_DIR="$RECIPE" \
+         EXTRAS_DIR="$WORK/extras" BUILD_ENTRY="$ENTRY"
   if [[ "$KIND" == "source" ]]; then
     # shellcheck source=lib/build-env.sh
     source "$ROOT_DIR/scripts/lib/build-env.sh"

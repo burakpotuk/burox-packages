@@ -1,0 +1,17 @@
+{
+  "name": "freetype",
+  "version": "2.15.0",
+  "url": "https://download.savannah.gnu.org/releases/freetype/freetype-{version}.tar.xz",
+  "signature": "{url}.sig",
+  "keyring": "freetype",
+  "license": [
+    "LICENSE.TXT",
+    "docs/FTL.TXT"
+  ],
+  "requires": [
+    "zlib"
+  ],
+  "versions": {
+    "2.15.0": "93cd47eb719c325107f2d3cf087d06299e944c3b48a40b55537302304dea1dd5"
+  }
+}

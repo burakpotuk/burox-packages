@@ -1,0 +1,15 @@
+{
+  "name": "libpng",
+  "version": "1.6.59",
+  "url": "https://download.sourceforge.net/libpng/libpng-{version}.tar.xz",
+  "noUpstreamVerification": "libpng publishes no signature or checksum for release tarballs; SHA-256 pinned on first download",
+  "license": [
+    "LICENSE"
+  ],
+  "requires": [
+    "zlib"
+  ],
+  "versions": {
+    "1.6.59": "d80dd2a38a37f803cb9b6ac7b14bd6e74ddc3b654780a8380bdf93523fdb4389"
+  }
+}

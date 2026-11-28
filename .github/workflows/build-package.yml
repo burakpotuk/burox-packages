@@ -78,6 +78,11 @@ jobs:
           missing=()
           command -v gpgv >/dev/null || missing+=(gnupg)
           command -v jq >/dev/null || missing+=(jq)
+          command -v xz >/dev/null || missing+=(xz)
+          command -v pkg-config >/dev/null || missing+=(pkgconf)
+          command -v cmake >/dev/null || missing+=(cmake)
+          # phpize (PECL extensions) runs autoconf at build time.
+          if [ "$PKG" = "php" ] && ! command -v autoconf >/dev/null; then missing+=(autoconf); fi
           if [ ${#missing[@]} -gt 0 ]; then brew install "${missing[@]}"; fi
           sw_vers
           xcodebuild -version

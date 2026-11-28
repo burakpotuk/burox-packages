@@ -1,0 +1,173 @@
+{
+  "name": "php",
+  "kind": "source",
+  "deps": [
+    "openssl",
+    "pcre2",
+    "zlib",
+    "libxml2",
+    "libxslt",
+    "sqlite",
+    "oniguruma",
+    "icu",
+    "libzip",
+    "zstd",
+    "libsodium",
+    "libpng",
+    "libjpeg-turbo",
+    "libwebp",
+    "freetype",
+    "curl",
+    "gmp",
+    "gettext",
+    "libmemcached"
+  ],
+  "builds": [
+    {
+      "version": "7.4.33",
+      "channel": "7.4",
+      "extras": {
+        "igbinary": "3.2.16",
+        "apcu": "5.1.28",
+        "redis": "6.3.0",
+        "memcached": "3.4.0",
+        "xdebug": "3.1.6"
+      },
+      "deps": [
+        "openssl11",
+        "pcre2",
+        "zlib",
+        "libxml2",
+        "libxslt",
+        "sqlite",
+        "oniguruma",
+        "icu",
+        "libzip",
+        "zstd",
+        "libsodium",
+        "libpng",
+        "libjpeg-turbo",
+        "libwebp",
+        "freetype",
+        "curl-legacy",
+        "gmp",
+        "gettext",
+        "libmemcached"
+      ],
+      "eol": true,
+      "securityNote": "PHP 7.4 stopped receiving security fixes from the PHP project on 2022-11-28. Use it only for legacy projects, bound to 127.0.0.1. Built with OpenSSL 1.1.1w and curl 8.17.0, which are also end of life."
+    },
+    {
+      "version": "8.0.30",
+      "channel": "8.0",
+      "extras": {
+        "igbinary": "3.2.16",
+        "apcu": "5.1.28",
+        "redis": "6.3.0",
+        "memcached": "3.4.0",
+        "xdebug": "3.5.3"
+      },
+      "deps": [
+        "openssl11",
+        "pcre2",
+        "zlib",
+        "libxml2",
+        "libxslt",
+        "sqlite",
+        "oniguruma",
+        "icu",
+        "libzip",
+        "zstd",
+        "libsodium",
+        "libpng",
+        "libjpeg-turbo",
+        "libwebp",
+        "freetype",
+        "curl-legacy",
+        "gmp",
+        "gettext",
+        "libmemcached"
+      ],
+      "eol": true,
+      "securityNote": "PHP 8.0 stopped receiving security fixes from the PHP project on 2023-11-26. Use it only for legacy projects, bound to 127.0.0.1. Built with OpenSSL 1.1.1w and curl 8.17.0, which are also end of life."
+    },
+    {
+      "version": "8.1.34",
+      "channel": "8.1",
+      "extras": {
+        "igbinary": "3.2.16",
+        "apcu": "5.1.28",
+        "redis": "6.3.0",
+        "memcached": "3.4.0",
+        "xdebug": "3.5.3"
+      },
+      "eol": true,
+      "securityNote": "PHP 8.1 stopped receiving security fixes from the PHP project on 2025-12-31. Use it only for legacy projects, bound to 127.0.0.1."
+    },
+    {
+      "version": "8.2.36",
+      "channel": "8.2",
+      "extras": {
+        "igbinary": "3.2.16",
+        "apcu": "5.1.28",
+        "redis": "6.3.0",
+        "memcached": "3.4.0",
+        "xdebug": "3.5.3"
+      },
+      "securityNote": "PHP 8.2 receives security fixes only until 2026-12-31."
+    },
+    {
+      "version": "8.3.37",
+      "channel": "8.3",
+      "extras": {
+        "igbinary": "3.2.16",
+        "apcu": "5.1.28",
+        "redis": "6.3.0",
+        "memcached": "3.4.0",
+        "xdebug": "3.5.3"
+      }
+    },
+    {
+      "version": "8.4.28",
+      "channel": "8.4",
+      "extras": {
+        "igbinary": "3.2.16",
+        "apcu": "5.1.28",
+        "redis": "6.3.0",
+        "memcached": "3.4.0",
+        "xdebug": "3.5.3"
+      }
+    },
+    {
+      "version": "8.5.13",
+      "channel": "8.5",
+      "extras": {
+        "igbinary": "3.2.17RC1",
+        "apcu": "5.1.28",
+        "redis": "6.3.0",
+        "memcached": "3.4.0",
+        "xdebug": "3.5.3"
+      }
+    },
+    {
+      "version": "8.6.0",
+      "channel": "8.6",
+      "extras": {
+        "igbinary": "3.2.17-dev.fe33bf9ec0",
+        "apcu": "5.1.29-dev.fb2c942552",
+        "redis": "6.4.0RC1",
+        "memcached": "3.4.1-dev.0b52d36571",
+        "xdebug": "3.6.0alpha1"
+      },
+      "meta": {
+        "prerelease": {
+          "xdebug": "3.6.0alpha1",
+          "igbinary": "3.2.17-dev.fe33bf9ec0 (upstream master with PHP 8.6 support; no release yet)",
+          "memcached": "3.4.1-dev.0b52d36571 (upstream master with the PHP 8.6 build fix; no release yet)",
+          "apcu": "5.1.29-dev.fb2c942552 (upstream master with PHP 8.6 support; 5.1.29 was released and withdrawn)",
+          "redis": "6.4.0RC1 (PECL beta, first release with PHP 8.6 support)"
+        }
+      }
+    }
+  ]
+}

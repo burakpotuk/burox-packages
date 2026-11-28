@@ -1,0 +1,14 @@
+{
+  "name": "libsodium",
+  "version": "1.0.22",
+  "url": "https://github.com/jedisct1/libsodium/releases/download/{version}-RELEASE/libsodium-{version}.tar.gz",
+  "signature": "{url}.sig",
+  "keyring": "libsodium",
+  "license": [
+    "LICENSE"
+  ],
+  "requires": [],
+  "versions": {
+    "1.0.22": "adbdd8f16149e81ac6078a03aca6fc03b592b89ef7b5ed83841c086191be3349"
+  }
+}

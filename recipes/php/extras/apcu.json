@@ -1,0 +1,15 @@
+{
+  "name": "apcu",
+  "url": "https://pecl.php.net/get/apcu-{version}.tgz",
+  "noUpstreamVerification": "PECL publishes no signatures or checksums for source tarballs; SHA-256 pinned on first download",
+  "license": [
+    "LICENSE"
+  ],
+  "versions": {
+    "5.1.28": "ca9c1820810a168786f8048a4c3f8c9e3fd941407ad1553259fb2e30b5f057bf",
+    "5.1.29-dev.fb2c942552": {
+      "sha256": "7f9d03dfabaf5961021c529f48a61386b73cd697cbacd410008ec32bc2d038c6",
+      "url": "https://github.com/krakjoe/apcu/archive/fb2c942552a3f5dab7f4dea4afb5cf0831222c57.tar.gz"
+    }
+  }
+}

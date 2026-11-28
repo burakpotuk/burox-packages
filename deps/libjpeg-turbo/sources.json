@@ -1,0 +1,13 @@
+{
+  "name": "libjpeg-turbo",
+  "version": "3.2.1",
+  "url": "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/download/{version}/libjpeg-turbo-{version}.tar.gz",
+  "license": [
+    "LICENSE.md",
+    "README.ijg"
+  ],
+  "requires": [],
+  "versions": {
+    "3.2.1": "c27ad72a68da151177929aa969ae773a2da5ac2af9ce946079314fdac8cece7f"
+  }
+}

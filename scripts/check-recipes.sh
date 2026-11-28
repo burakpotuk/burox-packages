@@ -22,7 +22,7 @@ check_sources() {
   fi
   while IFS= read -r v; do
     err "$f: invalid sha256 for $v"
-  done < <(jq -r '.versions | to_entries[] | select(.value | test("^[0-9a-f]{64}$") | not) | .key' "$f")
+  done < <(jq -r '.versions | to_entries[] | select((.value | if type == "object" then .sha256 else . end) | test("^[0-9a-f]{64}$") | not) | .key' "$f")
 }
 
 for dir in "$ROOT_DIR"/deps/*/; do
@@ -48,6 +48,12 @@ for dir in "$ROOT_DIR"/recipes/*/; do
   check_sources "$dir/sources.json"
   jq -e '.kind == "source" or .kind == "binary"' "$dir/versions.json" >/dev/null || err "recipes/$p: kind must be source or binary"
   [[ "$(jq -r .name "$dir/versions.json")" == "$p" ]] || err "recipes/$p: versions.json name mismatch"
+  while IFS=$'\t' read -r ename ever; do
+    ef="$dir/extras/$ename.json"
+    [[ -f "$ef" ]] || { err "recipes/$p: missing extras/$ename.json"; continue; }
+    check_sources "$ef"
+    jq -e --arg v "$ever" '.versions[$v]' "$ef" >/dev/null || err "recipes/$p: extra $ename $ever is not pinned"
+  done < <(jq -r '.builds[] | (.extras // {}) | to_entries[] | [.key, .value] | @tsv' "$dir/versions.json")
   while IFS=$'\t' read -r v ch; do
     [[ -n "$ch" && "$ch" != "null" ]] || err "recipes/$p: build $v has no channel"
     jq -e --arg v "$v" '.versions[$v]' "$dir/sources.json" >/dev/null || err "recipes/$p: version $v is not pinned in sources.json"
