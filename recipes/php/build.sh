@@ -20,7 +20,10 @@ SDK="$(xcrun --show-sdk-path)"
 
 # Same C dialect everywhere: newer Xcode defaults to C23, where "f()" means
 # "no arguments" and breaks older PHP/PECL code; CI's Xcode 16 uses gnu17.
+# C++: ICU >= 75 headers need C++17. Xcode 16's clang defaults to C++14 and
+# PHP < 8.1 does not ask for a standard at all.
 export CFLAGS="$CFLAGS -std=gnu17"
+export CXXFLAGS="$CXXFLAGS -std=gnu++17"
 
 # PHP's configure probes with -Werror-free tests; old branches trip over newer
 # clang defaults (implicit declarations / incompatible pointer types are errors).
@@ -51,7 +54,7 @@ Cflags:
 PC
 export PKG_CONFIG_LIBDIR="$PKG_CONFIG_LIBDIR:$WORK_DIR/pkgconfig"
 
-# ICU >= 75 needs C++17; PHP < 8.2's intl asks for C++11.
+# ...and PHP 8.1's intl explicitly asks for C++11, which would override it.
 if ! ver_ge "$MAJOR_MINOR" "8.2"; then
   sed -i.bak -e 's/-std=c++11/-std=c++17/g' -e 's/-std=gnu++11/-std=gnu++17/g' configure
 fi
@@ -86,7 +89,11 @@ if ! ver_ge "$MAJOR_MINOR" "8.5"; then
   OPTS+=(--enable-opcache)
 fi
 
-./configure "${OPTS[@]}"
+if ! ./configure "${OPTS[@]}"; then
+  echo "---- last lines of config.log ----" >&2
+  tail -n 150 config.log >&2
+  exit 1
+fi
 # php/php-fpm are plugin hosts: extensions resolve PHP's API from them at load
 # time. Newer Apple linkers drop globals the binary itself never calls unless
 # -export_dynamic is given (verify-plugin-symbols.sh guards this).
